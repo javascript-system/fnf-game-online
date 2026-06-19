@@ -1,0 +1,46 @@
+#!/bin/bash
+
+# Define a pasta do jogo
+PASTA_JOGO="fnf-main"
+PORTA=3000
+
+# Verifica se a pasta existe
+if [ ! -d "$PASTA_JOGO" ]; then
+    echo "Erro: A pasta '$PASTA_JOGO' não foi encontrada neste diretório."
+    exit 1
+fi
+
+# Função para encerrar o servidor ao fechar
+limpar() {
+    echo -e "\n[+] Encerrando o servidor local na porta $PORTA..."
+    kill $PID_SERVER 2>/dev/null
+    exit 0
+}
+
+# Captura o sinal de interrupção (Ctrl+C) e executa a função limpar
+trap limpar SIGINT SIGTERM
+
+# Entra na pasta do jogo
+cd "$PASTA_JOGO" || exit 1
+
+# Inicia o servidor Python em segundo plano
+echo "[+] Iniciando servidor local na porta $PORTA..."
+python3 -m http.server $PORTA &
+PID_SERVER=$!
+
+# Aguarda 1 segundo para garantir que o servidor subiu
+sleep 1
+
+# Abre o jogo no navegador padrão
+echo "[+] Abrindo o jogo no navegador..."
+if command -v xdg-open &> /dev/null; then
+    xdg-open "http://localhost:$PORTA/index.html"
+elif command -v open &> /dev/null; then
+    open "http://localhost:$PORTA/index.html"
+else
+    echo "Abra manualmente: http://localhost:$PORTA/index.html"
+fi
+
+# Mantém o script rodando para monitorar o processo
+echo "[+] Jogo rodando. Pressione Ctrl+C neste terminal para fechar o servidor."
+wait $PID_SERVER
